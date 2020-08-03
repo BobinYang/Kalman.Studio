@@ -1,0 +1,177 @@
+﻿<#@ template language="C#" hostSpecific="true" debug="false" #>
+<#@ output extension=".cshtml" #>
+<# 
+	TableHost host = (TableHost)(Host); 
+	SOTable table = host.Table;
+	List<SOColumn> list = host.ColumnList;
+	string nameSpace = host.GetString("NameSpace");
+	string className = host.GetString("ClassName");
+	if(string.IsNullOrEmpty(nameSpace))nameSpace = "Entity";
+	if(string.IsNullOrEmpty(className))className = table.Name;
+	string tableName  = table.Name.EndsWith("s") ?table.Name.TrimEnd('s') : table.Name.Trim();
+	
+	int length = tableName.Length;
+	string controllerName = tableName + "Controller";
+	string lowerTableName = tableName.Substring(0, 1).ToLower() + tableName.Substring(1, length - 1);
+	string serviceName = "_" + lowerTableName + "Service";
+#>
+@model IPagedList<<#= nameSpace #>.Core.Domain.<#=tableName#>>
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_LayoutSubMenu.cshtml";
+}
+<div id="content" class="same-hight height100 overflow-auto no-padding">
+    <!-- row -->
+     <section id="sub-menu" class=" l custom-scroll">
+        <h4>@ViewBag.Title</h4>
+        <ul class="sub-nav-list">
+            <li class="active">
+                <a href="#">@ViewBag.Title</a>
+            </li>
+        </ul>
+    </section>
+    <!-- end row -->
+    <!-- widget grid -->
+    <section id="widget-grid" class="r custom-scroll">
+         <!-- RIBBON -->
+        <div id="ribbon" class="no-padding">
+            <!-- breadcrumb -->
+            <ol class="breadcrumb">
+                <li>
+                    @ViewBag.Title
+                </li>
+            </ol>
+            <!-- end breadcrumb -->
+            <span class="ribbon-button-alignment pull-right">
+            </span>
+        </div>
+        <!-- END RIBBON -->
+        <!-- row -->
+        <div class="row">
+            <!-- NEW WIDGET START -->
+            <article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <!-- Widget ID (each widget will need unique ID)-->
+                <div class="jarviswidget" id="wid-<#=tableName#>-index"
+                     data-widget-editbutton="false"
+                     data-widget-colorbutton="false"
+                     data-widget-togglebutton="false"
+                     data-widget-fullscreenbutton="false"
+                     data-widget-deletebutton="false">
+                    <!-- widget div-->
+                    <div>
+                        <!-- widget edit box -->
+                        <div class="jarviswidget-editbox">
+                            <!-- This area used as dropdown edit box -->
+                            <input class="form-control" type="text">
+                        </div>
+                        <!-- end widget edit box -->
+                        <!-- widget content -->
+                        <div class="widget-body">
+                            <div class="dt-toolbar bg-color-lightgray padding-top-5">
+                                <div class="col-xs-12 col-sm-12">
+
+                                    <div id="datatable_tabletools_filter" class="dataTables_filter">
+                                        <label class="pull-left">
+                                            <span class="input-group-addon width-auto no-bg no-border">
+                                                关键字：
+                                            </span>
+                                            <input type="search" class="form-control txt_search_key" placeholder=""
+                                                   aria-controls="datatable_tabletools">
+                                        </label>
+                                        <label class="pull-left">
+                                            <button class="btn btn-default margin-left-15 btn_search">查询</button>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dt-toolbar">
+                                <div class="col-md-6">
+                                    <a href='@Url.Action("Create","<#=tableName#>")' id="del" class="btn btn-success btn-sm" data-title="add">添加</a>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="dataTables_length">
+                                        <label>
+                                            <select name="dt_basic_length" aria-controls="dt_basic" class="form-control" id="changeSize">
+                                                <option value="10">10</option>
+                                                <option value="20">20</option>
+                                                <option value="30">30</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <table id="datatable_fixed_column" class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <# foreach (SOColumn c in list)
+                                    { #>
+                                    <th>
+                                        @Html.DisplayNameFor(model => model.<#= c.Name #>)
+                                    </th>
+                                    <# } #>
+                                    <th></th>
+                                </tr>
+								</thead>
+                                <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <# foreach (SOColumn c in list)
+                                        { #>
+                                        <td>
+                                            @Html.DisplayFor(modelItem => item.<#= c.Name #>)
+                                        </td>
+                                        <# } #>
+                                        <td>
+                                            @Html.ActionLink("修改", "Edit", new { id = item.Id }, new { @class = "btn btn-primary btn-xs" })
+                                            @Html.ActionLink("详细", "Details", new { id = item.Id }, new { @class = "btn btn-info btn-xs" })
+                                            @Html.ActionLink("删除", "Delete", new { id = item.Id }, new { @class = "btn btn-danger btn-xs" })
+                                        </td>
+                                    </tr>
+                                }
+                                 </tbody>
+                            </table>
+                            <div class="dt-toolbar-footer">
+                                    <div class="col-xs-12 col-sm-3">
+                                        <div class="dataTables_info" id="dt_basic_info" role="status" aria-live="polite">第 <span class="txt-color-darken">@Model.CurrentPageIndex</span> /<span class="txt-color-darken">@Model.TotalPageCount</span>页，共<span class="text-primary">@Model.TotalItemCount</span> 条记录</div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="dataTables_paginate paging_simple_numbers" id="datatable_tabletools_paginate">
+                                            @Html.Pager(Model, new PagerOptions
+                            {
+                                PageIndexParameterName = "page",
+                                ShowGoButton = false
+                            },
+                                                 new { @id = "bootstrappager", @class = "pagination pagination-sm" })
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                        </div>
+                        <!-- end widget content -->
+                    </div>
+                    <!-- end widget div -->
+                </div>
+                <!-- end widget -->
+            </article>
+            <!-- WIDGET END -->
+        </div>
+        <!-- end row -->
+        <!-- row -->
+        <div class="row">
+            <!-- a blank row to get started -->
+            <div class="col-sm-12">
+                <!-- your contents here -->
+            </div>
+        </div>
+        <!-- end row -->
+    </section>
+    <!-- end widget grid -->
+</div>
+@section scripts{
+   @Scripts.Render("~/scripts/filter-datatables")
+}
