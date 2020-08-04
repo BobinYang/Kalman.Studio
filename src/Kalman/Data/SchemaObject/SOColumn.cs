@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
 
 namespace Kalman.Data.SchemaObject
@@ -31,6 +28,11 @@ namespace Kalman.Data.SchemaObject
         /// 是否标志字段
         /// </summary>
         public bool Identify { get; set; }
+
+        /// <summary>
+        /// 是否是计算列
+        /// </summary>
+        public bool Computed { get; set; }
 
         /// <summary>
         /// 原生类型，数据库定义的类型
@@ -77,7 +79,7 @@ namespace Kalman.Data.SchemaObject
                 return Kalman.Utilities.TypeUtil.DbType2Type(DataType);
             }
         }
-        
+
         /// <summary>
         /// .net framework 类型的字符串表示，如"int"、"long"
         /// </summary>
@@ -171,7 +173,7 @@ namespace Kalman.Data.SchemaObject
                 this.DataType == DbType.DateTime ||
                 this.DataType == DbType.DateTime2 ||
                 this.DataType == DbType.DateTimeOffset ||
-                this.DataType == DbType.Time 
+                this.DataType == DbType.Time
               )
                 return true;
 

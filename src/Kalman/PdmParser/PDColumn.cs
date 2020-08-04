@@ -38,6 +38,15 @@ namespace Kalman.PdmParser
         /// 默认值
         /// </summary>
         public string DefaultValue { get; set; }
+
+        /// <summary>
+        /// 是否是计算列
+        /// </summary>
+        public bool Computed { get; set; }
+
+        /// <summary>
+        /// 时候是标志字段
+        /// </summary>
         public bool Identity { get; set; }
         /// <summary>
         /// 是否主键

@@ -1,0 +1,215 @@
+﻿<#@ template language="C#v3.5" hostSpecific="true" debug="true" #><#@ output extension=".cs" #>
+<# 
+    TableHost host = (TableHost)(Host); 
+    SOTable table = host.Table;
+    List<SOColumn> list = host.ColumnList;
+
+    string nameSpace = host.GetString("NameSpace");
+    string className = host.GetString("ClassName");
+    if(string.IsNullOrEmpty(nameSpace))nameSpace = "DAL";
+    if(string.IsNullOrEmpty(className))className = table.Name;
+    List<SOColumn> listPK = new List<SOColumn>();
+	List<SOColumn> listOtherCol =new List<SOColumn>();
+
+	List<string> listAdd =new List<string>();
+	List<string> listUpdate =new List<string>();
+	foreach (SOColumn c in list)
+	{ 		  
+	  if(c.PrimaryKey)
+	  {
+	 	 listPK.Add(c);
+	  }
+	  if((c.PrimaryKey&&!c.Identify) ||!c.PrimaryKey )
+		{				
+		 if( !c.Computed)
+		 {  
+		     listOtherCol.Add(c);
+			 listAdd.Add("+ \",\" + SqlNull(entity." + c.Name + ")");
+			 if(!c.PrimaryKey) 
+			 	 listUpdate.Add("+ \","+ c.Name + "=\"+ SqlNull(entity." + c.Name + ")");
+		}  
+	}}
+
+	//colAll 	
+ 	System.Text.StringBuilder sbcolAllStr = new StringBuilder();
+ 	List<string> list1= list.ConvertAll(p=>p.Name);
+	for (int i = 0; i < list1.Count; i++)
+	{
+		sbcolAllStr.Append("t."+list[i] + ",");
+		if ((i + 1) % 5 == 0 && (i + 1)!=list1.Count ) sbcolAllStr.Append("\r\n                                         ");
+	}
+	string colAllStr = sbcolAllStr.ToString().TrimEnd(',');
+	
+	//colOtherStr
+	System.Text.StringBuilder sbcolOtherStr = new StringBuilder();
+	List<string> list2= listOtherCol.ConvertAll(p=>p.Name);
+	for (int i = 0; i < list2.Count; i++)
+	{
+	   if(list2[i].IndexOf("UpdateUser")>-1||list2[i].IndexOf("UpdateTime")>-1)
+			continue;
+		sbcolOtherStr.Append(list2[i] + ",");
+		if ((i + 1) % 5 == 0  && (i + 1)!=list2.Count) sbcolOtherStr.Append("\r\n                                         ");
+	}
+	string colOtherStr =  sbcolOtherStr.ToString().TrimEnd(',');
+ 	
+ 	
+ 	//AddStr
+    System.Text.StringBuilder sblistAddStr = new StringBuilder();
+	for (int i = 0; i < listAdd.Count; i++)
+	{
+		   if(listAdd[i].IndexOf("UpdateUser")>-1||listAdd[i].IndexOf("UpdateTime")>-1)
+			continue;
+		sblistAddStr.Append(listAdd[i] + "");
+		if ((i + 1) % 5 == 0  && (i + 1)!=listAdd.Count) sblistAddStr.Append("\r\n                                         ");
+	}
+	string listAddStr = System.Text.RegularExpressions.Regex.Replace(sblistAddStr.ToString(), @"^\+\s*"",""\s", "");
+    
+    //UpdateStr
+    System.Text.StringBuilder sblistUpdateStr = new StringBuilder();
+	for (int i = 0; i < listUpdate.Count; i++)
+	{
+		   if(listUpdate[i].IndexOf("CreateUser")>-1||listUpdate[i].IndexOf("CreateTime")>-1)
+			continue;
+		sblistUpdateStr.Append(listUpdate[i] + "");
+		if ((i + 1) % 5 == 0  && (i + 1)!=listUpdate.Count) sblistUpdateStr.Append("\r\n                                         ");
+	}
+	string listUpdateStr = System.Text.RegularExpressions.Regex.Replace(sblistUpdateStr.ToString(), @"^\+\s*"",", "+ \"");
+
+#>
+using System;
+using System.Collections.Generic;
+using System.Data;
+using ZS.Mix.Common;
+using <#= className #>.Entity;
+
+namespace <#= nameSpace #>
+{
+    internal class <#= className+"DAL" #> : BaseDAL
+    {
+    	/// <summary>
+        /// 分页获取所有记录
+        /// </summary>
+        public List<<#= className #>Entity>  GetAll(<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #>, int pageindex, int pagesize)
+        {
+            string sql = string.Format(@"select <#=colAllStr #>                                                                
+                                         from   <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+                                         where  t.<#= listPK[0].Name #>  like '%' + '{0}' + '%'
+                                         order by  t.<#= listPK[0].Name #> offset ( {1} - 1 ) * {2} rows fetch next {2} rows only;", <#= listPK[0].Name #>, pageindex, pagesize);
+            return Service.SqlTable(sql).ToList<<#= className+"Entity" #>>();
+         }
+         
+        /// <summary>
+        /// 获取记录总数
+        /// </summary>
+        public  int GetCount(<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #>)
+        {
+            string sql = string.Format(@"select count(1)  
+            							 from <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+            							 where  <#= listPK[0].Name #> like '%' + '{0}' + '%';", <#= listPK[0].Name #>);
+            return Convert.ToInt32(Service.SqlValueList(sql));
+        }
+         
+        /// <summary>
+        /// 获取简要记录
+        /// </summary>
+        public List<<#= className #>Entity> Get<#= className #>List (<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #> = "%")
+        {
+            string sql = string.Format(@"select  <#=colAllStr #>  
+            							 from  <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+                                         where t.<#= listPK[0].Name #> like '%' + '{0}' + '%' 
+                                         order by t.<#= listPK[0].Name #>", <#= listPK[0].Name #>);
+            return Service.SqlTable(sql).ToList<<#= className+"Entity" #>>();
+        }
+
+    	/// <summary>
+        /// 获取单个实体
+        /// </summary>
+        public  <#= className #>Entity Get<#= className #> (<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #>)
+        {
+            string sql = string.Format(@" select <#=colAllStr #>  
+                                          from <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+                                          where  t.<#= listPK[0].Name #> like '%' + '{0}' + '%';", <#= listPK[0].Name #>);
+
+            return Service.SqlTable(sql).ToList<<#= className+"Entity" #>>()[0];
+        }
+        
+        /// <summary>
+        /// 是否存在该记录
+        /// </summary>
+        public bool Exists(<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #>)
+        {
+            string sql = string.Format(@"declare @TempID int;SELECT @TempID = count(1)
+                                 	     from <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+                                		 where <#= listPK[0].Name #> = '{0}';
+		                                if @TempID = 0
+		                                    select 0;
+		                                else
+		                                    select  1;", <#= listPK[0].Name #>);
+
+            int result = Convert.ToInt32(Service.SqlValueList(sql));
+            return result == 1 ? true : false;
+        }
+        /// <summary>
+        ///  增加一条数据
+        /// </summary>
+        public bool Add(<#= className #>Entity entity)
+        {
+            string sql = @"INSERT INTO <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #>(
+                                         <#= colOtherStr #>    
+	                                    )VALUES("
+          								 <#= listAddStr #>  
+          								+ " ) ;";
+
+            int rowsAffected = Service.SqlExecute(sql);
+            return rowsAffected == 1 ? true : false;
+        }
+
+        /// <summary>
+        ///  更新一条数据
+        /// </summary>
+        public bool Update(<#= className #>Entity entity)
+        {
+            string sql = @"UPDATE <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> SET "
+                                         <#= listUpdateStr #> 
+                          + " WHERE <#=listPK[0].Name #>= '" + <#= "entity."+listPK[0].Name #> +"';";
+
+            int rowsAffected = Service.SqlExecute(sql);
+            return rowsAffected == 1 ? true : false;
+        }
+
+        /// <summary>
+        /// 删除一条数据
+        /// </summary>
+        public bool Delete(<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #>)
+        {
+            string sql = string.Format(@"DELETE <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #>
+            							 WHERE <#= listPK[0].Name #>='{0}';", <#= listPK[0].Name #>);
+
+            int rowsAffected = Service.SqlExecute(sql);
+            return rowsAffected == 1 ? true : false;
+        }
+
+         public object SqlNull(dynamic obj)
+        {
+            if (obj == null)
+            {
+                return "null";
+            }
+
+            string typename = obj.GetType().Name.Equals("Nullable`1") ? obj.GetType().GetGenericArguments()[0].ToString() : obj.GetType().ToString();
+
+            if (typename.Equals("System.String") || typename.Equals("System.Boolean"))
+            {
+                return "'" + obj.ToString() + "'";
+            }
+            else if (typename.Equals("System.DateTime"))
+            {
+                return "convert(datetime,'" + obj.ToString() + "') ";
+            }
+            else
+            {
+                return obj.ToString();
+            }
+        }
+}
+        

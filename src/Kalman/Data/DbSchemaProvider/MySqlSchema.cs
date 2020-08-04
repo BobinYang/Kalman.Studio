@@ -87,6 +87,7 @@ namespace Kalman.Data.DbSchemaProvider
                     Nullable = row["is_nullable"].ToString().ToUpper() == "YES",
                     NativeType = row["data_type"].ToString(),
                     Identify = row["extra"].ToString().IndexOf("auto_increment") != -1,
+                    Computed = false,
                     //ForeignKey
                     Length = ConvertUtil.ToInt32(row["character_maximum_length"], -1),
                     Precision = ConvertUtil.ToInt32(row["numeric_precision"], -1),
@@ -194,6 +195,7 @@ namespace Kalman.Data.DbSchemaProvider
                     Nullable = row["is_nullable"].ToString().ToUpper() == "YES",
                     NativeType = row["data_type"].ToString(),
                     Identify = row["extra"].ToString().IndexOf("auto_increment") != -1,
+                    Computed = false,
                     //ForeignKey
                     Length = ConvertUtil.ToInt32(row["character_maximum_length"], -1),
                     Precision = ConvertUtil.ToInt32(row["numeric_precision"], -1),

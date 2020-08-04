@@ -1,0 +1,92 @@
+﻿<#@ template language="C#" hostSpecific="true" debug="true" #>
+<#@ output extension=".cs" #>
+<# 
+	TableHost host = (TableHost)(Host); 
+	SOTable table = host.Table;
+	List<SOColumn> list = host.ColumnList;	
+	string nameSpace = host.GetString("NameSpace");
+	string className = host.GetString("ClassName");
+	if(string.IsNullOrEmpty(nameSpace))nameSpace = "Entity";
+	if(string.IsNullOrEmpty(className))
+	{
+	  className = table.Name;
+	  if(className.IndexOf("T_") == 0)
+	  {
+	     className = className.Substring(2);
+	  }
+	  if(className.IndexOf("t_") == 0)
+	  {
+	     className = className.Substring(2);
+	  }
+	  //string[] strs = className.Split('_');
+	  //className = "";
+	  //foreach(string str in strs)
+	  {
+	    //className += str.Substring(0,1).ToUpper()+str.Substring(1);
+	  }
+	}
+	className += "Entity";
+	List<SOColumn> listPK = new List<SOColumn>();
+	List<SOColumn> listCol = new List<SOColumn>();
+	foreach (SOColumn c in list)
+	{ 		  
+	   if(c.PrimaryKey)
+	   {
+	      listPK.Add(c);
+	   }
+	   else
+	   {
+		  listCol.Add(c);
+	   }
+	}
+#>
+using System;
+using System.Xml.Serialization;
+using System.Runtime.Serialization;
+
+/**
+ * Code By Ken.Liao
+ **/
+namespace <#= "HW.Mix.Entity" #>
+{
+	/// <summary>
+    /// <#= table.Comment == "" ? table.Name : table.Comment.Replace("\r\n"," ") #>
+    /// </summary>
+	[DataContract]
+	public class <#= className #> : BaseEntity
+	{
+	    /// <summary>
+        /// 默认构造函数（需要初始化属性的在此处理）
+        /// </summary>       
+        public <#= className #>()
+		{            
+		}
+
+        #region Property Members
+	
+	    <#
+	    foreach(SOColumn c in list)
+	    { //string feild = c.Name.Substring(0,1).ToUpper()+c.Name.Substring(1);	  
+		  string feild = c.Name;
+		  string tp = TypeUtil.DbType2TypeString(c.DataType);
+		  if(c.NativeType.Equals("date")) tp = "DateTime";
+		  string nl = "";
+		  if(tp.Equals("sbyte"))
+		  {
+		     tp = "short";
+		  }
+		  if(!tp.Equals("string") && c.Nullable)
+		  {
+		     nl = "?";
+		  }
+		#>/// <summary>
+        /// <#= c.Comment == "" ? c.Name : c.Comment.Replace("\r\n"," ") #>
+        /// </summary>
+        [DataMember]
+		public virtual <#= tp + nl #> <#= feild #> { get; set; }
+		
+		<#}#>
+		
+		#endregion
+	}
+}

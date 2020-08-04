@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 
 namespace Kalman.Utilities
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class TypeUtil
     {
@@ -20,50 +19,73 @@ namespace Kalman.Utilities
             {
                 case DbType.AnsiString:
                     return SqlDbType.VarChar;
+
                 case DbType.AnsiStringFixedLength:
                     return SqlDbType.Char;
+
                 case DbType.Binary:
                     return SqlDbType.VarBinary;
+
                 case DbType.Boolean:
                     return SqlDbType.Bit;
+
                 case DbType.Byte:
                     return SqlDbType.TinyInt;
+
                 case DbType.Currency:
                     return SqlDbType.Money;
+
                 case DbType.Date:
                     return SqlDbType.DateTime;
+
                 case DbType.DateTime:
                     return SqlDbType.DateTime;
+
                 case DbType.Decimal:
                     return SqlDbType.Decimal;
+
                 case DbType.Double:
                     return SqlDbType.Float;
+
                 case DbType.Guid:
                     return SqlDbType.UniqueIdentifier;
+
                 case DbType.Int16:
                     return SqlDbType.Int;
+
                 case DbType.Int32:
                     return SqlDbType.Int;
+
                 case DbType.Int64:
                     return SqlDbType.BigInt;
+
                 case DbType.Object:
                     return SqlDbType.Variant;
+
                 case DbType.SByte:
                     return SqlDbType.TinyInt;
+
                 case DbType.Single:
                     return SqlDbType.Real;
+
                 case DbType.String:
                     return SqlDbType.NVarChar;
+
                 case DbType.StringFixedLength:
                     return SqlDbType.NChar;
+
                 case DbType.Time:
                     return SqlDbType.DateTime;
+
                 case DbType.UInt16:
                     return SqlDbType.Int;
+
                 case DbType.UInt32:
                     return SqlDbType.Int;
+
                 case DbType.UInt64:
                     return SqlDbType.BigInt;
+
                 case DbType.VarNumeric:
                     return SqlDbType.Decimal;
 
@@ -87,7 +109,6 @@ namespace Kalman.Utilities
                 result = DbType.Int16;
             else if (dataType == typeof(Int64))
                 result = DbType.Int64;
-
             else if (dataType == typeof(DateTime))
                 result = DbType.DateTime;
             else if (dataType == typeof(float))
@@ -183,55 +204,77 @@ namespace Kalman.Utilities
                 case DbType.AnsiStringFixedLength:
                 case DbType.String:
                 case DbType.StringFixedLength:
-                    return "String";
+                    return "string";
+
                 case DbType.Binary:
                     return "byte[]";
+
                 case DbType.Boolean:
-                    return "Boolean";
-                case DbType.Byte://?
-                    return "int";
+                    return "bool";
+
+                case DbType.Byte:
+                    return "byte";
+
+                case DbType.SByte:
+                    return "sbyte";
+
                 case DbType.Currency:
                     return "double";
+
                 case DbType.Date:
-                    return "Timestamp";
+                    return "DateTime";
+
                 case DbType.DateTime:
-                    return "Timestamp";
+                    return "DateTime";
+
                 case DbType.DateTime2:
-                    return "Timestamp";
+                    return "DateTime";
                 //case DbType.DateTimeOffset:
                 //    return "DateTime";
                 case DbType.Decimal:
-                    return "BigDecimal";
+                    return "decimal";
+
                 case DbType.Double:
                     return "double";
+
                 case DbType.Guid:
                     return "Guid";
+
                 case DbType.Int16:
                     return "short";
+
                 case DbType.Int32:
                     return "int";
+
                 case DbType.Int64:
                     return "long";
+
                 case DbType.Object:
                     return "object";
-                case DbType.SByte:
-                    return "sbyte";
+
                 case DbType.Single:
                     return "Single";
+
                 case DbType.Time:
-                    return "Timestamp";
+                    return "DateTime";
+
                 case DbType.UInt16:
                     return "UInt16";
+
                 case DbType.UInt32:
                     return "UInt32";
+
                 case DbType.UInt64:
                     return "UInt64";
+
                 case DbType.VarNumeric:
-                    return "BigDecimal";
+                    return "decimal";
+
                 case DbType.Xml:
-                    return "String";
+                    return "string";
+
                 default:
-                    return "String";
+                    return "string";
             }
         }
 
@@ -241,7 +284,7 @@ namespace Kalman.Utilities
         /// <param name="dbType"></param>
         /// <param name="length"></param>
         /// <returns></returns>
-        public static string DbType2MysqlSequelizeString(DbType dbType,int length=0)
+        public static string DbType2MysqlSequelizeString(DbType dbType, int length = 0)
         {
             switch (dbType)
             {
@@ -250,24 +293,31 @@ namespace Kalman.Utilities
                 case DbType.String:
                 case DbType.StringFixedLength:
                     return "STRING" + (length > 0 ? "(" + length + ")" : "");
+
                 case DbType.Xml:
                     return "TEXT";
+
                 case DbType.Binary:
                     return "byte[]";
+
                 case DbType.Boolean:
                     return "BOOLEAN";
+
                 case DbType.Time:
                 case DbType.Date:
                 case DbType.DateTime:
                 case DbType.DateTime2:
                     return "DATE";
+
                 case DbType.Currency:
                 case DbType.Decimal:
                 case DbType.Double:
                 case DbType.VarNumeric:
                     return "DOUBLE";
+
                 case DbType.Guid:
                     return "UUID";
+
                 case DbType.Byte://?
                 case DbType.Int16:
                 case DbType.Int32:
@@ -278,6 +328,7 @@ namespace Kalman.Utilities
                 case DbType.UInt32:
                 case DbType.UInt64:
                     return "INTEGER";
+
                 default:
                     return "STRING" + (length > 0 ? "(" + length + ")" : "");
             }
@@ -294,50 +345,76 @@ namespace Kalman.Utilities
             {
                 case DbType.String:
                     return typeof(string);
+
                 case DbType.UInt64:
                     return typeof(UInt64);
+
                 case DbType.Int64:
                     return typeof(Int64);
+
                 case DbType.Int32:
                     return typeof(Int32);
+
                 case DbType.UInt32:
                     return typeof(UInt32);
+
                 case DbType.Single:
                     return typeof(float);
+
                 case DbType.Date:
                     return typeof(DateTime);
+
                 case DbType.DateTime:
                     return typeof(DateTime);
+
                 case DbType.Time:
                     return typeof(DateTime);
+
                 case DbType.StringFixedLength:
                     return typeof(string);
+
                 case DbType.UInt16:
                     return typeof(UInt16);
+
                 case DbType.Int16:
                     return typeof(Int16);
-                case DbType.SByte:
+
+                case DbType.Byte:
                     return typeof(byte);
+
+                case DbType.SByte:
+                    return typeof(sbyte);
+
                 case DbType.Object:
                     return typeof(object);
+
                 case DbType.AnsiString:
                     return typeof(string);
+
                 case DbType.AnsiStringFixedLength:
                     return typeof(string);
+
                 case DbType.VarNumeric:
                     return typeof(decimal);
+
                 case DbType.Currency:
                     return typeof(double);
+
                 case DbType.Binary:
                     return typeof(byte[]);
+
                 case DbType.Decimal:
                     return typeof(decimal);
+
                 case DbType.Double:
                     return typeof(Double);
+
                 case DbType.Guid:
                     return typeof(Guid);
+
                 case DbType.Boolean:
                     return typeof(bool);
+
                 default:
                     return typeof(DBNull);
             } //end switch
@@ -363,57 +440,83 @@ namespace Kalman.Utilities
             {
                 case "varchar":
                     return DbType.AnsiString;
+
                 case "nvarchar":
                     return DbType.String;
+
                 case "int":
                     return DbType.Int32;
+
                 case "uniqueidentifier":
                     return DbType.Guid;
+
                 case "datetime":
                 case "datetime2":
                     return DbType.DateTime;
+
                 case "bigint":
                     return DbType.Int64;
+
                 case "binary":
                     return DbType.Binary;
+
                 case "bit":
                     return DbType.Boolean;
+
                 case "char":
                     return DbType.AnsiStringFixedLength;
+
                 case "decimal":
                     return DbType.Decimal;
+
                 case "float":
                     return DbType.Double;
+
                 case "image":
                     return DbType.Binary;
+
                 case "money":
                     return DbType.Currency;
+
                 case "nchar":
                     return DbType.String;
+
                 case "ntext":
                     return DbType.String;
+
                 case "numeric":
                     return DbType.Decimal;
+
                 case "real":
                     return DbType.Single;
+
                 case "smalldatetime":
                     return DbType.DateTime;
+
                 case "smallint":
                     return DbType.Int16;
+
                 case "smallmoney":
                     return DbType.Currency;
+
                 case "sql_variant":
                     return DbType.String;
+
                 case "sysname":
                     return DbType.String;
+
                 case "text":
                     return DbType.AnsiString;
+
                 case "timestamp":
                     return DbType.Binary;
+
                 case "tinyint":
                     return DbType.Byte;
+
                 case "varbinary":
                     return DbType.Binary;
+
                 default:
                     return DbType.AnsiString;
             }
@@ -466,7 +569,6 @@ namespace Kalman.Utilities
                 case "decimal":
                     return DbType.Decimal;
 
-
                 case "bigint":
                     return DbType.Int64;
 
@@ -501,6 +603,7 @@ namespace Kalman.Utilities
 
                 case "NUMBER":
                     return DbType.Decimal;
+
                 case "LOG":
                 case "BFILE":
                 case "LONG RAW":
@@ -604,6 +707,7 @@ namespace Kalman.Utilities
         //public static DbType DataType2DbType(string nativeType)
         //{
         //}
-        #endregion
+
+        #endregion 将不同数据库的数据类型转换成System.Data.DbType
     }
 }

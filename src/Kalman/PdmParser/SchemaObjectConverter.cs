@@ -107,6 +107,7 @@ namespace Kalman.PdmParser
             c.PrimaryKey = column.IsPK;
             c.ForeignKey = column.IsFK;
             c.Identify = column.Identity;
+            c.Computed = column.Computed;
             c.Length = column.Length;
             c.NativeType = column.DataType.Split('(')[0];
             c.Nullable = !column.Mandatory;

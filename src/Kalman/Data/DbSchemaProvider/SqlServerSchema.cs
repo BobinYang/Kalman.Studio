@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Kalman.Data.SchemaObject;
 using Kalman.Utilities;
-using Kalman.Data.SchemaObject;
+using System.Collections.Generic;
 using System.Data;
-using System.Collections;
+using System.Linq;
 
 namespace Kalman.Data.DbSchemaProvider
 {
@@ -15,7 +12,7 @@ namespace Kalman.Data.DbSchemaProvider
     public class SqlServerSchema : DbSchema
     {
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="db"></param>
         public SqlServerSchema(Database db)
@@ -23,19 +20,19 @@ namespace Kalman.Data.DbSchemaProvider
             base.DbProvider = db;
         }
 
-        Dictionary<string, string> dic = new Dictionary<string, string>();
-        static object syncObject = new object();
+        private Dictionary<string, string> dic = new Dictionary<string, string>();
+        private static object syncObject = new object();
 
-        string GetDBComment(SODatabase db)
+        private string GetDBComment(SODatabase db)
         {
-            string cmdText = string.Format(@"use [{0}]; 
+            string cmdText = string.Format(@"use [{0}];
                                 SELECT value as 'comment'
-                                FROM fn_listextendedproperty(default, default, default, default, default, default, default); ",db.Name);
+                                FROM fn_listextendedproperty(default, default, default, default, default, default, default); ", db.Name);
 
             return this.DbProvider.ExecuteScalar<string>(CommandType.Text, cmdText);
         }
 
-        string GetTableComment(SOTable table)
+        private string GetTableComment(SOTable table)
         {
             string key = string.Format("{0}_{1}_{2}", table.Database.Name, table.Owner, table.Name);
 
@@ -44,8 +41,8 @@ namespace Kalman.Data.DbSchemaProvider
                 if (dic.ContainsKey(key)) return dic[key];
                 else
                 {
-                    string cmdText = string.Format(@"use [{0}]; 
-                                SELECT objname as 'table_name', value as 'comment' 
+                    string cmdText = string.Format(@"use [{0}];
+                                SELECT objname as 'table_name', value as 'comment'
                                 FROM fn_listextendedproperty (NULL, 'schema', '{1}', 'table', default, NULL, NULL); ", table.Database.Name, table.Owner);
                     DataTable dt = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText).Tables[0];
                     foreach (DataRow row in dt.Rows)
@@ -61,7 +58,7 @@ namespace Kalman.Data.DbSchemaProvider
             }
         }
 
-        string GetColumnComment(SOColumn column)
+        private string GetColumnComment(SOColumn column)
         {
             string key = string.Format("{0}_{1}_{2}", column.Database.Name, column.Parent.Name, column.Name);
 
@@ -73,7 +70,7 @@ namespace Kalman.Data.DbSchemaProvider
                     string cmdText = string.Format(@"use [{0}];
                                                     SELECT major_id, minor_id, t.name AS 'table_name', c.name AS 'column_name', value AS 'comment'
                                                     FROM sys.extended_properties AS ep
-                                                    INNER JOIN sys.tables AS t ON ep.major_id = t.object_id 
+                                                    INNER JOIN sys.tables AS t ON ep.major_id = t.object_id
                                                     INNER JOIN sys.columns AS c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id
                                                     WHERE class = 1;", column.Database.Name);
                     DataTable dt = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText).Tables[0];
@@ -91,7 +88,7 @@ namespace Kalman.Data.DbSchemaProvider
         }
 
         //获取表的主键列
-        List<string> GetPrimaryKeys(SOTable table)
+        private List<string> GetPrimaryKeys(SOTable table)
         {
             string cmdText = string.Format(@"use [{2}];exec sp_pkeys '{0}','{1}','{2}';", table.Name, table.Owner, table.Database.Name);
             List<string> list = new List<string>();
@@ -112,7 +109,7 @@ namespace Kalman.Data.DbSchemaProvider
             foreach (var item in list)
             {
                 if (item.Name == "master" || item.Name == "model" || item.Name == "msdb" || item.Name == "tempdb") continue;
-                dic.Add(item.Name,item);
+                dic.Add(item.Name, item);
             }
             return dic.Values.ToList<SODatabase>();
         }
@@ -124,8 +121,8 @@ namespace Kalman.Data.DbSchemaProvider
         /// <returns></returns>
         public override List<SOTable> GetTableList(SODatabase db)
         {
-            string cmdText = string.Format("use [{0}];exec sp_tables;",db.Name);
-            SortedDictionary<string, SOTable> dic = new SortedDictionary<string,SOTable>();
+            string cmdText = string.Format("use [{0}];exec sp_tables;", db.Name);
+            SortedDictionary<string, SOTable> dic = new SortedDictionary<string, SOTable>();
             DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
 
             foreach (DataRow row in dt.Rows)
@@ -135,7 +132,7 @@ namespace Kalman.Data.DbSchemaProvider
                 SOTable table = new SOTable { Parent = db, Name = row["TABLE_NAME"].ToString(), Owner = row["TABLE_OWNER"].ToString() };
                 table.SchemaName = table.Owner;
                 table.Comment = GetTableComment(table);
-                dic.Add(table.Name,table);
+                dic.Add(table.Name, table);
             }
 
             return dic.Values.ToList<SOTable>();
@@ -148,7 +145,12 @@ namespace Kalman.Data.DbSchemaProvider
         /// <returns></returns>
         public override List<SOColumn> GetTableColumnList(SOTable table)
         {
-            string cmdText = string.Format(@"use [{2}];exec sp_columns '{0}','{1}','{2}';", table.Name, table.Owner, table.Database.Name);
+            string cmdText = string.Format(@"use [{2}];select   colm.name column_name, object_definition(colm.default_object_id) as column_def, systype.name type_name, colm.is_identity, colm.is_nullable ,
+                                                        cast(colm.max_length as int) length, cast(colm.precision as int) precision, cast(colm.scale as int) scale, colm.is_computed
+                                            from     sys.columns colm
+                                                inner join sys.types systype on colm.system_type_id = systype.system_type_id and colm.user_type_id = systype.user_type_id
+                                            where    colm.object_id = object_id('{0}')
+                                            order by colm.column_id;", table.Name, table.Owner, table.Database.Name);
 
             List<SOColumn> columnList = new List<SOColumn>();
             List<string> pkList = GetPrimaryKeys(table);
@@ -161,9 +163,10 @@ namespace Kalman.Data.DbSchemaProvider
                     Parent = table,
                     Name = row["column_name"].ToString(),
                     DefaultValue = row["column_def"].ToString(),
-                    Nullable = row["is_nullable"].ToString().ToUpper() == "YES",
-                    NativeType = row["type_name"].ToString().Replace(" identity",""),
-                    Identify = row["type_name"].ToString().IndexOf("identity") != -1,
+                    Nullable = row["is_nullable"].ToString() == "True",
+                    NativeType = row["type_name"].ToString(),
+                    Identify = row["is_identity"].ToString() == "True",
+                    Computed = row["is_computed"].ToString() == "True",
                     //ForeignKey
                     Length = ConvertUtil.ToInt32(row["length"], -1),
                     Precision = ConvertUtil.ToInt32(row["precision"], -1),
@@ -179,52 +182,52 @@ namespace Kalman.Data.DbSchemaProvider
             return columnList;
         }
 
-//        /// <summary>
-//        /// 获取表所拥有的索引列表
-//        /// </summary>
-//        /// <param name="table"></param>
-//        /// <returns></returns>
-//        public override List<SOIndex> GetTableIndexList(SOTable table)
-//        {
-//            string cmdText = string.Format(@"SELECT *  
-//                FROM INFORMATION_SCHEMA.`constraints` 
-//                WHERE table_schema='{0}' AND table_name='{1}';", table.Database.Name, table.Name);
+        //        /// <summary>
+        //        /// 获取表所拥有的索引列表
+        //        /// </summary>
+        //        /// <param name="table"></param>
+        //        /// <returns></returns>
+        //        public override List<SOIndex> GetTableIndexList(SOTable table)
+        //        {
+        //            string cmdText = string.Format(@"SELECT *
+        //                FROM INFORMATION_SCHEMA.`constraints`
+        //                WHERE table_schema='{0}' AND table_name='{1}';", table.Database.Name, table.Name);
 
-//            List<SOIndex> indexList = new List<SOIndex>();
-//            List<SOColumn> columnList = GetTableColumnList(table);
-//            DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
+        //            List<SOIndex> indexList = new List<SOIndex>();
+        //            List<SOColumn> columnList = GetTableColumnList(table);
+        //            DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
 
-//            foreach (DataRow row in dt.Rows)
-//            {
-//                SOIndex index = new SOIndex
-//                {
-//                    Parent = table,
-//                    Name = row["constraint_name"].ToString(),
-//                    Comment = row["constraint_name"].ToString(),
-//                    IsCluster = false,
-//                    IsFullText = row["constraint_type"].ToString() == "Full Text",
-//                    IsPrimaryKey = row["constraint_type"].ToString() == "PRIMARY KEY",
-//                    IsUnique = row["constraint_type"].ToString() == "UNIQUE"
-//                };
-//                indexList.Add(index);
+        //            foreach (DataRow row in dt.Rows)
+        //            {
+        //                SOIndex index = new SOIndex
+        //                {
+        //                    Parent = table,
+        //                    Name = row["constraint_name"].ToString(),
+        //                    Comment = row["constraint_name"].ToString(),
+        //                    IsCluster = false,
+        //                    IsFullText = row["constraint_type"].ToString() == "Full Text",
+        //                    IsPrimaryKey = row["constraint_type"].ToString() == "PRIMARY KEY",
+        //                    IsUnique = row["constraint_type"].ToString() == "UNIQUE"
+        //                };
+        //                indexList.Add(index);
 
-//                string cmdText2 = string.Format(@"SELECT column_name  
-//                FROM INFORMATION_SCHEMA.`statistics` 
-//                WHERE table_schema='{0}' AND table_name='{1}';", table.Database.Name, table.Name);
+        //                string cmdText2 = string.Format(@"SELECT column_name
+        //                FROM INFORMATION_SCHEMA.`statistics`
+        //                WHERE table_schema='{0}' AND table_name='{1}';", table.Database.Name, table.Name);
 
-//                DataTable dt2 = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText2).Tables[0];
-//                index.Columns = new List<SOColumn>();
-//                foreach (DataRow row2 in dt2.Rows)
-//                {
-//                    foreach (SOColumn column in columnList)
-//                    {
-//                        if (row2[0].ToString() == column.Name) index.Columns.Add(column);
-//                    }
-//                }
-//            }
+        //                DataTable dt2 = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText2).Tables[0];
+        //                index.Columns = new List<SOColumn>();
+        //                foreach (DataRow row2 in dt2.Rows)
+        //                {
+        //                    foreach (SOColumn column in columnList)
+        //                    {
+        //                        if (row2[0].ToString() == column.Name) index.Columns.Add(column);
+        //                    }
+        //                }
+        //            }
 
-//            return indexList;
-//        }
+        //            return indexList;
+        //        }
 
         /// <summary>
         /// 获取视图列表
@@ -271,6 +274,7 @@ namespace Kalman.Data.DbSchemaProvider
                     Nullable = row["is_nullable"].ToString().ToUpper() == "YES",
                     NativeType = row["type_name"].ToString().Replace(" identity", ""),
                     Identify = row["type_name"].ToString().IndexOf("identity") != -1,
+                    Computed = false,
                     //ForeignKey
                     Length = ConvertUtil.ToInt32(row["length"], -1),
                     Precision = ConvertUtil.ToInt32(row["precision"], -1),
@@ -285,52 +289,52 @@ namespace Kalman.Data.DbSchemaProvider
             return columnList;
         }
 
-//        /// <summary>
-//        /// 获取视图所拥有的索引列表
-//        /// </summary>
-//        /// <param name="view"></param>
-//        /// <returns></returns>
-//        public override List<SOIndex> GetViewIndexList(SOView view)
-//        {
-//            string cmdText = string.Format(@"SELECT *  
-//                FROM INFORMATION_SCHEMA.`constraints` 
-//                WHERE table_schema='{0}' AND table_name='{1}';", view.Database.Name, view.Name);
+        //        /// <summary>
+        //        /// 获取视图所拥有的索引列表
+        //        /// </summary>
+        //        /// <param name="view"></param>
+        //        /// <returns></returns>
+        //        public override List<SOIndex> GetViewIndexList(SOView view)
+        //        {
+        //            string cmdText = string.Format(@"SELECT *
+        //                FROM INFORMATION_SCHEMA.`constraints`
+        //                WHERE table_schema='{0}' AND table_name='{1}';", view.Database.Name, view.Name);
 
-//            List<SOIndex> indexList = new List<SOIndex>();
-//            List<SOColumn> columnList = GetViewColumnList(view);
-//            DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
+        //            List<SOIndex> indexList = new List<SOIndex>();
+        //            List<SOColumn> columnList = GetViewColumnList(view);
+        //            DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
 
-//            foreach (DataRow row in dt.Rows)
-//            {
-//                SOIndex index = new SOIndex
-//                {
-//                    Parent = view,
-//                    Name = row["constraint_name"].ToString(),
-//                    Comment = row["constraint_name"].ToString(),
-//                    IsCluster = false,
-//                    IsFullText = row["constraint_type"].ToString() == "Full Text",
-//                    IsPrimaryKey = row["constraint_type"].ToString() == "PRIMARY KEY",
-//                    IsUnique = row["constraint_type"].ToString() == "UNIQUE"
-//                };
-//                indexList.Add(index);
+        //            foreach (DataRow row in dt.Rows)
+        //            {
+        //                SOIndex index = new SOIndex
+        //                {
+        //                    Parent = view,
+        //                    Name = row["constraint_name"].ToString(),
+        //                    Comment = row["constraint_name"].ToString(),
+        //                    IsCluster = false,
+        //                    IsFullText = row["constraint_type"].ToString() == "Full Text",
+        //                    IsPrimaryKey = row["constraint_type"].ToString() == "PRIMARY KEY",
+        //                    IsUnique = row["constraint_type"].ToString() == "UNIQUE"
+        //                };
+        //                indexList.Add(index);
 
-//                string cmdText2 = string.Format(@"SELECT column_name  
-//                FROM INFORMATION_SCHEMA.`statistics` 
-//                WHERE table_schema='{0}' AND table_name='{1}';", view.Database.Name, view.Name);
+        //                string cmdText2 = string.Format(@"SELECT column_name
+        //                FROM INFORMATION_SCHEMA.`statistics`
+        //                WHERE table_schema='{0}' AND table_name='{1}';", view.Database.Name, view.Name);
 
-//                DataTable dt2 = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText2).Tables[0];
-//                index.Columns = new List<SOColumn>();
-//                foreach (DataRow row2 in dt2.Rows)
-//                {
-//                    foreach (SOColumn column in columnList)
-//                    {
-//                        if (row2[0].ToString() == column.Name) index.Columns.Add(column);
-//                    }
-//                }
-//            }
+        //                DataTable dt2 = this.DbProvider.ExecuteDataSet(CommandType.Text, cmdText2).Tables[0];
+        //                index.Columns = new List<SOColumn>();
+        //                foreach (DataRow row2 in dt2.Rows)
+        //                {
+        //                    foreach (SOColumn column in columnList)
+        //                    {
+        //                        if (row2[0].ToString() == column.Name) index.Columns.Add(column);
+        //                    }
+        //                }
+        //            }
 
-//            return indexList;
-//        }
+        //            return indexList;
+        //        }
 
         /// <summary>
         /// 获取存储过程列表
@@ -360,7 +364,7 @@ namespace Kalman.Data.DbSchemaProvider
         /// <returns></returns>
         public override List<SOCommandParameter> GetCommandParameterList(SOCommand command)
         {
-            string cmdText = string.Format(@"USE [{1}];SELECT routine_definition FROM INFORMATION_SCHEMA.PARAMETERS 
+            string cmdText = string.Format(@"USE [{1}];SELECT routine_definition FROM INFORMATION_SCHEMA.PARAMETERS
                 WHERE SPECIFIC_schema='{0}' AND SPECIFIC_type='PROCEDURE' AND SPECIFIC_catalog='{1}' AND SPECIFIC_name='{2}';",
                                                     command.Owner ?? "dbo", command.Database.Name, command.Name);
 
@@ -422,7 +426,7 @@ namespace Kalman.Data.DbSchemaProvider
         /// <returns></returns>
         public override string GetCommandSqlText(SOCommand command)
         {
-            string cmdText = string.Format(@"USE [{1}];SELECT routine_definition FROM INFORMATION_SCHEMA.ROUTINES 
+            string cmdText = string.Format(@"USE [{1}];SELECT routine_definition FROM INFORMATION_SCHEMA.ROUTINES
                 WHERE routine_schema='{0}' AND routine_type='PROCEDURE' AND routine_catalog='{1}' AND routine_name='{2}';",
                                                     command.Owner ?? "dbo", command.Database.Name, command.Name);
 

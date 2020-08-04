@@ -125,6 +125,7 @@ namespace Kalman.Data.DbSchemaProvider
                 c.DataType = this.GetDbType(c.NativeType);
                 c.PrimaryKey = IndexColumnIsPrimary(indexList, c.Name);
                 c.Identify = IndexColumnIsIdentity(indexList, c.Name);
+                c.Computed = false;
 
                 list.Add(c);
             }

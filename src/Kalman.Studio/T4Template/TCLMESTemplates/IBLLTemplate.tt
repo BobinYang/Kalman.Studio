@@ -1,0 +1,57 @@
+﻿<#@ template language="C#" hostSpecific="true" debug="true" #>
+<#@ output extension=".cs" #>
+<# 
+	TableHost host = (TableHost)(Host); 
+	SOTable table = host.Table;
+	List<SOColumn> list = host.ColumnList;	
+	string nameSpace = host.GetString("NameSpace");
+	string className = host.GetString("ClassName");
+	if(string.IsNullOrEmpty(nameSpace))nameSpace = "Entity";
+	if(string.IsNullOrEmpty(className))
+	{
+	  className = table.Name;
+	  if(className.IndexOf("T_") == 0)
+	  {
+	     className = className.Substring(2);
+	  }
+	  if(className.IndexOf("t_") == 0)
+	  {
+	     className = className.Substring(2);
+	  }
+	  //string[] strs = className.Split('_');
+	  //className = "";
+	  //foreach(string str in strs)
+	  {
+	    //className += str.Substring(0,1).ToUpper()+str.Substring(1);
+	  }
+	}
+	List<SOColumn> listPK = new List<SOColumn>();
+	List<SOColumn> listCol = new List<SOColumn>();
+	foreach (SOColumn c in list)
+	{ 		  
+	   if(c.PrimaryKey)
+	   {
+	      listPK.Add(c);
+	   }
+	   else
+	   {
+		  listCol.Add(c);
+	   }
+	}
+#>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using HW.Mix.Entity;
+using HW.Mix.IDAL;
+
+/**
+ * Code By Ken.Liao
+ **/
+namespace <#= "HW.Mix.IBLL" #>
+{
+	public interface <#= "I" + className + "BLL" #> : IBaseBLL<<#= className + "Entity"#>, <#= "I" + className + "DAL" #>>
+	{	    
+	}
+}
