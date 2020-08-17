@@ -6,18 +6,23 @@
 
     string nameSpace = host.GetString("NameSpace");
     string className = host.GetString("ClassName");
+
     if(string.IsNullOrEmpty(nameSpace))nameSpace = "DAL";
     if(string.IsNullOrEmpty(className))className = table.Name;
     List<SOColumn> listPK = new List<SOColumn>();
-	List<SOColumn> listOtherCol =new List<SOColumn>();
-
-	List<string> listAdd =new List<string>();
+	List<SOColumn> listFK =new List<SOColumn>();
+    List<SOColumn> listOtherCol =new List<SOColumn>();
+    List<string> listAdd =new List<string>();
 	List<string> listUpdate =new List<string>();
 	foreach (SOColumn c in list)
 	{ 		  
 	  if(c.PrimaryKey)
 	  {
 	 	 listPK.Add(c);
+	  }
+      if(c.ForeignKey)
+	  {
+	 	 listFK.Add(c);
 	  }
 	  if((c.PrimaryKey&&!c.Identify) ||!c.PrimaryKey )
 		{				
@@ -112,7 +117,7 @@ namespace <#= nameSpace #>
         /// <summary>
         /// 获取简要记录
         /// </summary>
-        public List<<#= className #>Entity> Get<#= className #>List (<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #> = "%")
+        public List<<#= className #>Entity> Get<#= className #>List (<#= TypeUtil.DbType2TypeString(listPK[0].DataType) #> <#= listPK[0].Name #> )
         {
             string sql = string.Format(@"select  <#=colAllStr #>  
             							 from  <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
@@ -121,6 +126,20 @@ namespace <#= nameSpace #>
             return Service.SqlTable(sql).ToList<<#= className+"Entity" #>>();
         }
 
+<# if(listFK.Count>0)
+{ #>
+        /// <summary>
+        /// 根据外键获取所有记录
+        /// </summary>
+        public List<<#= className #>Entity>  GetAllByFK(<#= TypeUtil.DbType2TypeString(listFK[0].DataType) #>   <#= listFK[0].Name #>)
+        {
+            string sql = string.Format(@"select <#=colAllStr #>                                                                
+                                         from   <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #> t
+                                         where  t.<#= listFK[0].Name #>  like '%' + '{0}' + '%'
+                                         order by  t.<#= listPK[0].Name #> ;", <#= listFK[0].Name #>);
+            return Service.SqlTable(sql).ToList<<#= className+"Entity" #>>();
+         }
+<# } #>
     	/// <summary>
         /// 获取单个实体
         /// </summary>
@@ -188,6 +207,22 @@ namespace <#= nameSpace #>
             int rowsAffected = Service.SqlExecute(sql);
             return rowsAffected == 1 ? true : false;
         }
+
+        
+<# if(listFK.Count>0) 
+{ #>
+        /// <summary>
+        /// 根据外键删除记录
+        /// </summary>
+        public bool DeleteByFK(<#= TypeUtil.DbType2TypeString(listFK[0].DataType) #> <#= listFK[0].Name #>)
+        {
+            string sql = string.Format(@"DELETE <#= table.Database.Name + "." + table.SchemaName + "." + table.Name #>
+            							 WHERE <#= listFK[0].Name #>='{0}';", <#= listFK[0].Name #>);
+
+            int rowsAffected = Service.SqlExecute(sql);
+            return rowsAffected == 1 ? true : false;
+        }
+<# } #>
 
          public object SqlNull(dynamic obj)
         {

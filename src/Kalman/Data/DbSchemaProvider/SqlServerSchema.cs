@@ -155,6 +155,10 @@ namespace Kalman.Data.DbSchemaProvider
             List<SOColumn> columnList = new List<SOColumn>();
             List<string> pkList = GetPrimaryKeys(table);
             DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
+            string sql = string.Format(@"select  col.name from syscolumns col,sysforeignkeys f where f.fkeyid=col.id and f.fkey=col.colid
+                                                 and OBJECT_NAME(f.fkeyid)  ='{0}'; ", table.Name);
+
+            string fkcol = this.DbProvider.ExecuteScalar<string>(CommandType.Text, sql);
 
             foreach (DataRow row in dt.Rows)
             {
@@ -167,7 +171,7 @@ namespace Kalman.Data.DbSchemaProvider
                     NativeType = row["type_name"].ToString(),
                     Identify = row["is_identity"].ToString() == "True",
                     Computed = row["is_computed"].ToString() == "True",
-                    //ForeignKey
+                    ForeignKey = row["column_name"].ToString() == fkcol,
                     Length = ConvertUtil.ToInt32(row["length"], -1),
                     Precision = ConvertUtil.ToInt32(row["precision"], -1),
                     Scale = ConvertUtil.ToInt32(row["scale"], -1),
@@ -264,6 +268,12 @@ namespace Kalman.Data.DbSchemaProvider
             List<SOColumn> columnList = new List<SOColumn>();
             DataTable dt = this.DbProvider.ExecuteDataSet(System.Data.CommandType.Text, cmdText).Tables[0];
 
+
+            string sql = string.Format(@"select  col.name from syscolumns col,sysforeignkeys f where f.fkeyid=col.id and f.fkey=col.colid
+                                                 and OBJECT_NAME(f.fkeyid)  ='{0}'; ", view.Name);
+
+            string fkcol = this.DbProvider.ExecuteScalar<string>(CommandType.Text, sql);
+
             foreach (DataRow row in dt.Rows)
             {
                 SOColumn column = new SOColumn
@@ -275,7 +285,7 @@ namespace Kalman.Data.DbSchemaProvider
                     NativeType = row["type_name"].ToString().Replace(" identity", ""),
                     Identify = row["type_name"].ToString().IndexOf("identity") != -1,
                     Computed = false,
-                    //ForeignKey
+                    ForeignKey = row["column_name"].ToString()== fkcol,
                     Length = ConvertUtil.ToInt32(row["length"], -1),
                     Precision = ConvertUtil.ToInt32(row["precision"], -1),
                     Scale = ConvertUtil.ToInt32(row["scale"], -1),
