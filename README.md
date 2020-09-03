@@ -1,7 +1,11 @@
+# 对T4代码生成器-Kalman Studio新增了一些额外的功能
+
+https://www.cnblogs.com/springsnow/p/10365078.html
+
 # Kalman.Studio
 开发辅助工具，自动代码生成器，内置基于T4的代码生成器。
 
-<a href="http://www.cnblogs.com/lingyun_k" target="_blank">作者博客</a>
+<a href="http://www.cnblogs.com/lingyun_k" target="_blank">原作者博客</a>
 
 QQ群：122161138
 
